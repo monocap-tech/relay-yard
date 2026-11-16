@@ -1,0 +1,73 @@
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+namespace RelayYard
+{
+    // Midterm-style scene switching: UI calls LoadScene(string); goal uses
+    // an optional trigger, with a gate guard to prevent premature victory.
+    [DisallowMultipleComponent]
+    public sealed class SceneLoader : MonoBehaviour
+    {
+        [SerializeField] private bool loadOnPlayerTrigger;
+        [SerializeField] private string triggerScene = "Win";
+        [SerializeField] private ExitGate gateRequiredOpen;
+
+        public void LoadScene(string sceneName)
+        {
+            if (string.IsNullOrWhiteSpace(sceneName) ||
+                !Application.CanStreamedLevelBeLoaded(sceneName))
+            {
+                Debug.LogError("[SceneLoader] Scene is missing from the active Build Profiles scene list: " + sceneName);
+                return;
+            }
+            Time.timeScale = 1f; // Never carry a paused state into another scene.
+            SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+        }
+
+        public void LoadGame() => LoadScene("Game");
+        public void LoadMenu() => LoadScene("MainMenu");
+        public void RestartGame() => LoadScene("Game");
+
+        public void QuitGame()
+        {
+            Time.timeScale = 1f;
+            PlayerPrefs.Save();
+            Application.Quit();
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#endif
+        }
+
+        // An already-overlapping player must also be able to finish after
+        // the sixth plate unlocks the exit. OnTriggerEnter2D alone would miss
+        // that state change because no new boundary crossing occurs.
+        private bool goalTransitionStarted;
+
+        private void OnTriggerEnter2D(Collider2D other) => TryCompleteGoal(other);
+
+        private void OnTriggerStay2D(Collider2D other) => TryCompleteGoal(other);
+
+        private void TryCompleteGoal(Collider2D other)
+        {
+            if (goalTransitionStarted || !loadOnPlayerTrigger ||
+                other.GetComponent<PlayerMotor>() == null)
+                return;
+            if (gateRequiredOpen != null && !gateRequiredOpen.IsOpen)
+                return;
+
+            goalTransitionStarted = true;
+            if (triggerScene == "Win" && RelayRunClock.Active != null)
+                RelayRunClock.Active.CompleteAtGoal();
+            LoadScene(triggerScene);
+        }
+
+#if UNITY_EDITOR
+        public void EditorConfigureTrigger(string sceneName, ExitGate gate)
+        {
+            loadOnPlayerTrigger = true;
+            triggerScene = sceneName;
+            gateRequiredOpen = gate;
+        }
+#endif
+    }
+}
