@@ -42,6 +42,11 @@ namespace RelayYard
                     AudioDirector.Instance.PlayUnlock();
                 OnSolved?.Invoke();
             }
+            else if (signalDisplay != null)
+            {
+                // Only unsolved presses disturb the trace; completion has its own transition.
+                signalDisplay.PulseSwitch();
+            }
             return true;
         }
 
