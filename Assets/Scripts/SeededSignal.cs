@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 namespace RelayYard
@@ -150,7 +149,7 @@ namespace RelayYard
                 if (pulse > 0f)
                 {
                     float interference =
-                        (Mathf.PingPong(x * 2.7f - t * 4.8f + runtimeSeed, 2f) - 1f) * 0.30f
+                        (Mathf.PingPong(x * 2.7f - t * 4.8f + noiseOffsetX, 2f) - 1f) * 0.30f
                         + Mathf.Sin(x * 4.1f + t * 14f) * 0.11f;
                     y += interference * pulse * (1f - solvedBlend);
                 }
