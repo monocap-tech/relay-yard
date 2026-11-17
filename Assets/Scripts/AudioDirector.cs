@@ -34,6 +34,15 @@ namespace RelayYard
         public bool SfxMuted => sfxMuted;
         public bool MixerConnected { get; private set; }
 
+        // The current loop position supplies the visualizer's beat clock.
+        // Time samples continue across Game scene resets because this manager persists.
+        // -1 means music playback is unavailable.
+        public float MusicPlaybackSeconds =>
+            musicSource != null && musicSource.isPlaying &&
+            musicSource.clip != null && musicSource.clip.frequency > 0
+                ? musicSource.timeSamples / (float)musicSource.clip.frequency
+                : -1f;
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
